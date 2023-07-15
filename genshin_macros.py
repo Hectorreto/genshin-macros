@@ -1,42 +1,37 @@
 import pyautogui
 import keyboard
-from random import random, choice
 from time import sleep
-from math import sqrt
 from threading import Thread
 from pynput import mouse
+from helpers import randomBetween, getDistance
 
 pyautogui.FAILSAFE = False
-pyautogui.PAUSE = 0.001
-exit = False
-wait = 0
-stop = False
-frame = 0
+pyautogui.PAUSE = 0.005
+stopClicking = False
+cooldown = 0
+isKeepingClick = False
 ignoreNextClick = False
 lastPosition = None
 
-def waitExit():
-    global wait, exit
+def listenBreakLoop():
+    global cooldown, stopClicking
     sleep(0.5) 
     while (key := keyboard.read_key()) not in ['shift', 'mayusculas']:
         print(key)
-        wait = 5
-    exit = True
+        cooldown = 5
+    stopClicking = True
 
 def on_click(x, y, button, pressed):
-    global wait, stop, ignoreNextClick
+    global cooldown, isKeepingClick, ignoreNextClick
     if ignoreNextClick:
         return
 
     if pressed:
-        stop = True
+        isKeepingClick = True
     else:
-        stop = False
-        wait = 5
+        isKeepingClick = False
+        cooldown = 5
 mouse.Listener(on_click=on_click).start()
-
-def getDistance(a, b):
-    return sqrt((a.x - b.x)**2 + (a.y - b.y)**2)
 
 def falseClickIn(position):
     global ignoreNextClick
@@ -45,22 +40,17 @@ def falseClickIn(position):
     ignoreNextClick = False
 
 def autoclick(startPosition):
-    global wait, stop, frame, lastPosition
+    global cooldown, isKeepingClick, lastPosition
 
-    if wait > 0:
-        print(1, wait)
-        wait -= 1
-    elif stop:
-        print(2, stop)
+    if cooldown > 0:
+        print('cooldown', cooldown)
+        cooldown -= 1
+    elif isKeepingClick:
+        print('isKeepingClick', isKeepingClick)
         pass
     else:
         position = pyautogui.position()
         falseClickIn(startPosition)
-
-        if frame % 2 == 0:
-            key = choice(['f', 'space'])
-            print(key)
-            keyboard.send(key) 
 
         if getDistance(position, startPosition) < getDistance(position, lastPosition):
             pyautogui.moveTo(lastPosition)
@@ -69,24 +59,19 @@ def autoclick(startPosition):
             pyautogui.moveTo(position)
             lastPosition = position
 
-    frame += 1
-
-def randomBetween(min, max):
-    return random() * (max - min) + min
-
 while True:
     print('waiting')
     keyboard.wait('shift+w+s')
 
     print('clicking')
-    exit = False
-    wait = 0
-    stop = False
+    stopClicking = False
+    cooldown = 0
+    isKeepingClick = False
     position = pyautogui.position()
     lastPosition = position
-    Thread(target=waitExit).start()
+    Thread(target=listenBreakLoop).start()
 
-    while not exit: 
+    while not stopClicking: 
         autoclick(position)
         randomTime = randomBetween(0.050, 0.150)
         sleep(randomTime)
