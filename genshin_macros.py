@@ -39,8 +39,17 @@ def false_click_in(position):
     pyautogui.leftClick(position)
     ignore_next_click = False
 
-def autoclick(start_position):
-    global cooldown, is_keeping_click, last_position
+def update_start_position():
+    global start_position, stop_clicking
+    while not stop_clicking:
+        image_location = pyautogui.locateCenterOnScreen('button.png', confidence=0.8)
+        if image_location:
+            print("Button found at:", image_location)
+            start_position = image_location
+        sleep(0.5)
+
+def autoclick():
+    global cooldown, is_keeping_click, last_position, start_position
 
     if cooldown > 0:
         print('cooldown:', cooldown)
@@ -67,11 +76,12 @@ while True:
     stop_clicking = False
     cooldown = 0
     is_keeping_click = False
-    position = pyautogui.position()
-    last_position = position
+    start_position = pyautogui.position()
+    last_position = start_position
     Thread(target=listen_break_loop).start()
+    Thread(target=update_start_position).start()
 
     while not stop_clicking: 
-        autoclick(position)
+        autoclick()
         random_time = random_between(0.050, 0.150)
         sleep(random_time)
