@@ -12,9 +12,11 @@ def spawn_click():
 def move_to_button():
     while not exit:
         if active:
-            button_location = pyautogui.locateCenterOnScreen('button.png', confidence=0.8)
-            if button_location:
+            try:
+                button_location = pyautogui.locateCenterOnScreen('button.png', confidence=0.8)
                 pyautogui.moveTo(button_location)
+            except pyautogui.ImageNotFoundException:
+                pass
         time.sleep(0.1)
 
 active = False
